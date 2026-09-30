@@ -9,6 +9,8 @@ camera.position.set(7.2, 6.6, 6.8);
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.setClearColor(0x0b121b, 1);
+renderer.domElement.style.display = 'block';
 sceneHost.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -19,7 +21,7 @@ const keyLight = new THREE.DirectionalLight(0xffffff, 2.2); keyLight.position.se
 const grid = new THREE.GridHelper(14, 14, 0x263b4e, 0x172635); grid.position.y = -2.35; scene.add(grid);
 
 const group = new THREE.Group(); scene.add(group);
-const mirrorSize = 4.8;
+const mirrorSize = 6.6;
 const mirrorMaterialA = new THREE.MeshPhysicalMaterial({ color: 0x6fd8e2, transparent: true, opacity: .34, metalness: .7, roughness: .18, side: THREE.DoubleSide });
 const mirrorMaterialB = new THREE.MeshPhysicalMaterial({ color: 0x9d86f5, transparent: true, opacity: .3, metalness: .65, roughness: .2, side: THREE.DoubleSide });
 const mirrorA = new THREE.Mesh(new THREE.PlaneGeometry(mirrorSize, mirrorSize), mirrorMaterialA);
@@ -82,7 +84,7 @@ function update() {
   document.querySelector('#rotationSummary').textContent = `${xSlider.value}° / ${ySlider.value}° / ${zSlider.value}°`;
 }
 function resize() { const w = sceneHost.clientWidth, h = sceneHost.clientHeight; camera.aspect = w / h; camera.updateProjectionMatrix(); renderer.setSize(w, h, false); }
-window.addEventListener('resize', resize); [xSlider,ySlider,zSlider].forEach((el) => el.addEventListener('input', update));
+window.addEventListener('resize', resize); [xSlider,ySlider,zSlider].forEach((el) => { el.addEventListener('input', update); el.addEventListener('change', update); });
 document.querySelector('#resetBtn').addEventListener('click', () => { xSlider.value = 0; ySlider.value = 0; zSlider.value = 0; update(); });
 resize(); update();
 renderer.setAnimationLoop(() => { controls.update(); renderer.render(scene, camera); });
