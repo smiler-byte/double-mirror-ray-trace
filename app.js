@@ -18,34 +18,34 @@ controls.target.set(0, 0, 0);
 
 scene.add(new THREE.HemisphereLight(0xaac3d8, 0x111722, 1.9));
 const keyLight = new THREE.DirectionalLight(0xffffff, 2.2); keyLight.position.set(4, 6, 8); scene.add(keyLight);
-const grid = new THREE.GridHelper(14, 14, 0x263b4e, 0x172635); grid.position.y = -2.35; scene.add(grid);
+const grid = new THREE.GridHelper(16, 16, 0x263b4e, 0x172635); grid.position.y = -3.25; scene.add(grid);
 
 const group = new THREE.Group(); scene.add(group);
-const mirrorSize = 6.6;
+const mirrorSize = 9.5;
 const mirrorMaterialA = new THREE.MeshPhysicalMaterial({ color: 0x6fd8e2, transparent: true, opacity: .34, metalness: .7, roughness: .18, side: THREE.DoubleSide });
 const mirrorMaterialB = new THREE.MeshPhysicalMaterial({ color: 0x9d86f5, transparent: true, opacity: .3, metalness: .65, roughness: .2, side: THREE.DoubleSide });
 const mirrorA = new THREE.Mesh(new THREE.PlaneGeometry(mirrorSize, mirrorSize), mirrorMaterialA);
 const mirrorB = new THREE.Mesh(new THREE.PlaneGeometry(mirrorSize, mirrorSize), mirrorMaterialB);
-// Base planes: mirror A is x=0, mirror B is y=0; their shared edge is world Z.
-mirrorA.rotation.y = Math.PI / 2;
-mirrorB.rotation.x = Math.PI / 2;
+// Base planes share the X axis. Their normals are (Y+Z)/sqrt(2) and (Y-Z)/sqrt(2).
+const zNormal = new THREE.Vector3(0, 0, 1);
+const baseNormals = [new THREE.Vector3(0, 1, 1).normalize(), new THREE.Vector3(0, 1, -1).normalize()];
+mirrorA.quaternion.setFromUnitVectors(zNormal, baseNormals[0]);
+mirrorB.quaternion.setFromUnitVectors(zNormal, baseNormals[1]);
 group.add(mirrorA, mirrorB);
-const edge = new THREE.Mesh(new THREE.CylinderGeometry(.035, .035, 4.9, 12), new THREE.MeshBasicMaterial({ color: 0xe9f2fa }));
-edge.rotation.x = Math.PI / 2; group.add(edge);
+const edge = new THREE.Mesh(new THREE.CylinderGeometry(.035, .035, 8.8, 12), new THREE.MeshBasicMaterial({ color: 0xe9f2fa }));
+edge.rotation.z = Math.PI / 2; group.add(edge);
 
 const axis = new THREE.AxesHelper(2.1); axis.material.transparent = true; axis.material.opacity = .7; scene.add(axis);
 const rayGroup = new THREE.Group(); scene.add(rayGroup);
-const points = [new THREE.Vector3(3, 6, 0), new THREE.Vector3(0, 3, 0), new THREE.Vector3(3, 0, 0), new THREE.Vector3(6, -3, 0)];
 const rayMats = [new THREE.LineBasicMaterial({ color: 0xa9b8c8 }), new THREE.LineBasicMaterial({ color: 0xffb75e }), new THREE.LineBasicMaterial({ color: 0x67e8c0 })];
 const arrowMats = [new THREE.MeshBasicMaterial({ color: 0xa9b8c8 }), new THREE.MeshBasicMaterial({ color: 0xffb75e }), new THREE.MeshBasicMaterial({ color: 0x67e8c0 })];
 const rayLines = rayMats.map((mat) => { const line = new THREE.Line(new THREE.BufferGeometry(), mat); rayGroup.add(line); return line; });
 const hitMarkers = [0,1].map(() => { const m = new THREE.Mesh(new THREE.SphereGeometry(.11, 16, 8), new THREE.MeshBasicMaterial({color:0xffffff})); rayGroup.add(m); return m; });
 const arrows = arrowMats.map((mat) => { const a = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), .7, mat.color, .16, .1); rayGroup.add(a); return a; });
 
-const baseNormals = [new THREE.Vector3(1,0,0), new THREE.Vector3(0,1,0)];
-const planeBasis = [[new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,1)], [new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,1)]];
-const rayStart = new THREE.Vector3(3, 6, 0);
-const baseIncident = new THREE.Vector3(-1,-1,0).normalize();
+const planeBasis = [[new THREE.Vector3(1,0,0), new THREE.Vector3(0,1,1).normalize()], [new THREE.Vector3(1,0,0), new THREE.Vector3(0,1,-1).normalize()]];
+const rayStart = new THREE.Vector3(1.2, 6, 3);
+const baseIncident = new THREE.Vector3(0,-1,0);
 const xSlider = document.querySelector('#xSlider'), ySlider = document.querySelector('#ySlider'), zSlider = document.querySelector('#zSlider');
 const fmt = (v) => `${v >= 0 ? '' : '-'}${Math.abs(v).toFixed(3)}`;
 function rotatedData() {
@@ -60,6 +60,7 @@ function withinMirror(point, index, data) { const rel = point; return Math.abs(r
 function setSegment(line, a, b) { line.geometry.setFromPoints([a,b]); line.geometry.computeBoundingSphere(); }
 function update() {
   const data = rotatedData();
+  group.quaternion.copy(data.q);
   let origin = rayStart.clone(), direction = baseIncident.clone();
   const segments = [], hits = [];
   const candidates = data.normals.map((n, i) => { const p = rayPlaneHit(origin, direction, n); return p && withinMirror(p, i, data) ? {i, p} : null; }).filter(Boolean).sort((a,b) => a.p.distanceTo(origin) - b.p.distanceTo(origin));
