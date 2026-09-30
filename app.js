@@ -5,7 +5,8 @@ const sceneHost = document.querySelector('#scene');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b121b);
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-camera.position.set(7.2, 6.6, 6.8);
+camera.position.set(10.5, 0, 5.8);
+camera.up.set(0, 0, 1);
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -20,7 +21,12 @@ scene.add(new THREE.HemisphereLight(0xaac3d8, 0x111722, 1.9));
 const keyLight = new THREE.DirectionalLight(0xffffff, 2.2); keyLight.position.set(4, 6, 8); scene.add(keyLight);
 const grid = new THREE.GridHelper(16, 16, 0x263b4e, 0x172635); grid.position.y = -3.25; scene.add(grid);
 
-const group = new THREE.Group(); scene.add(group);
+// The display root mirrors X only for the viewer: +Y stays to the right,
+// +Z stays up, and +X is represented as going into the screen.
+const displayRoot = new THREE.Group();
+displayRoot.scale.x = -1;
+scene.add(displayRoot);
+const group = new THREE.Group(); displayRoot.add(group);
 const mirrorSize = 9.5;
 const mirrorMaterialA = new THREE.MeshPhysicalMaterial({ color: 0x6fd8e2, transparent: true, opacity: .34, metalness: .7, roughness: .18, side: THREE.DoubleSide });
 const mirrorMaterialB = new THREE.MeshPhysicalMaterial({ color: 0x9d86f5, transparent: true, opacity: .3, metalness: .65, roughness: .2, side: THREE.DoubleSide });
@@ -35,8 +41,8 @@ group.add(mirrorA, mirrorB);
 const edge = new THREE.Mesh(new THREE.CylinderGeometry(.035, .035, 8.8, 12), new THREE.MeshBasicMaterial({ color: 0xe9f2fa }));
 edge.rotation.z = Math.PI / 2; group.add(edge);
 
-const axis = new THREE.AxesHelper(2.1); axis.material.transparent = true; axis.material.opacity = .7; scene.add(axis);
-const rayGroup = new THREE.Group(); scene.add(rayGroup);
+const axis = new THREE.AxesHelper(2.1); axis.material.transparent = true; axis.material.opacity = .7; displayRoot.add(axis);
+const rayGroup = new THREE.Group(); displayRoot.add(rayGroup);
 const rayMats = [new THREE.LineBasicMaterial({ color: 0xa9b8c8 }), new THREE.LineBasicMaterial({ color: 0xffb75e }), new THREE.LineBasicMaterial({ color: 0x67e8c0 })];
 const arrowMats = [new THREE.MeshBasicMaterial({ color: 0xa9b8c8 }), new THREE.MeshBasicMaterial({ color: 0xffb75e }), new THREE.MeshBasicMaterial({ color: 0x67e8c0 })];
 const rayLines = rayMats.map((mat) => { const line = new THREE.Line(new THREE.BufferGeometry(), mat); rayGroup.add(line); return line; });
