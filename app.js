@@ -5,8 +5,8 @@ const sceneHost = document.querySelector('#scene');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b121b);
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-camera.position.set(0, 0, -12);
-camera.up.set(1, 0, 0);
+camera.position.set(10.5, 0, 5.8);
+camera.up.set(0, 0, 1);
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -24,6 +24,7 @@ const grid = new THREE.GridHelper(16, 16, 0x263b4e, 0x172635); grid.position.y =
 // Camera convention: +Y is screen-right, +X is screen-up, and +Z goes into
 // the screen. Keep the displayed geometry in the same handed coordinate frame.
 const displayRoot = new THREE.Group();
+displayRoot.scale.x = -1;
 scene.add(displayRoot);
 const group = new THREE.Group(); displayRoot.add(group);
 const mirrorSize = 9.5;
@@ -50,12 +51,14 @@ const hitMarkers = [0,1].map(() => { const m = new THREE.Mesh(new THREE.SphereGe
 const arrows = arrowMats.map((mat) => { const a = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), .7, mat.color, .16, .1); rayGroup.add(a); return a; });
 
 const planeBasis = [[new THREE.Vector3(1,0,0), new THREE.Vector3(0,1,1).normalize()], [new THREE.Vector3(1,0,0), new THREE.Vector3(0,1,-1).normalize()]];
-const rayStart = new THREE.Vector3(1.2, 6, 3);
+const rayStart = new THREE.Vector3(1.2, 3.6, 3);
 const baseIncident = new THREE.Vector3(0,-1,0);
 const xSlider = document.querySelector('#xSlider'), ySlider = document.querySelector('#ySlider'), zSlider = document.querySelector('#zSlider');
 const fmt = (v) => `${v >= 0 ? '' : '-'}${Math.abs(v).toFixed(3)}`;
+const mountRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, THREE.MathUtils.degToRad(90), 0, 'XYZ'));
 function rotatedData() {
-  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(+xSlider.value), THREE.MathUtils.degToRad(+ySlider.value), THREE.MathUtils.degToRad(+zSlider.value), 'XYZ'));
+  const userRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(+xSlider.value), THREE.MathUtils.degToRad(+ySlider.value), THREE.MathUtils.degToRad(+zSlider.value), 'XYZ'));
+  const q = mountRotation.clone().multiply(userRotation);
   return { q, normals: baseNormals.map((n) => n.clone().applyQuaternion(q)), bases: planeBasis.map((bs) => bs.map((b) => b.clone().applyQuaternion(q))) };
 }
 function rayPlaneHit(origin, direction, normal) {
