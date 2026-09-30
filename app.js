@@ -5,8 +5,8 @@ const sceneHost = document.querySelector('#scene');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b121b);
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-camera.position.set(10.5, 0, 5.8);
-camera.up.set(0, 0, 1);
+camera.position.set(0, 0, -12);
+camera.up.set(1, 0, 0);
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -21,15 +21,14 @@ scene.add(new THREE.HemisphereLight(0xaac3d8, 0x111722, 1.9));
 const keyLight = new THREE.DirectionalLight(0xffffff, 2.2); keyLight.position.set(4, 6, 8); scene.add(keyLight);
 const grid = new THREE.GridHelper(16, 16, 0x263b4e, 0x172635); grid.position.y = -3.25; scene.add(grid);
 
-// The display root mirrors X only for the viewer: +Y stays to the right,
-// +Z stays up, and +X is represented as going into the screen.
+// Camera convention: +Y is screen-right, +X is screen-up, and +Z goes into
+// the screen. Keep the displayed geometry in the same handed coordinate frame.
 const displayRoot = new THREE.Group();
-displayRoot.scale.x = -1;
 scene.add(displayRoot);
 const group = new THREE.Group(); displayRoot.add(group);
 const mirrorSize = 9.5;
-const mirrorMaterialA = new THREE.MeshPhysicalMaterial({ color: 0x6fd8e2, transparent: true, opacity: .34, metalness: .7, roughness: .18, side: THREE.DoubleSide });
-const mirrorMaterialB = new THREE.MeshPhysicalMaterial({ color: 0x9d86f5, transparent: true, opacity: .3, metalness: .65, roughness: .2, side: THREE.DoubleSide });
+const mirrorMaterialA = new THREE.MeshPhysicalMaterial({ color: 0x6fd8e2, transparent: true, opacity: .2, metalness: .7, roughness: .18, side: THREE.DoubleSide });
+const mirrorMaterialB = new THREE.MeshPhysicalMaterial({ color: 0x9d86f5, transparent: true, opacity: .18, metalness: .65, roughness: .2, side: THREE.DoubleSide });
 const mirrorA = new THREE.Mesh(new THREE.PlaneGeometry(mirrorSize, mirrorSize), mirrorMaterialA);
 const mirrorB = new THREE.Mesh(new THREE.PlaneGeometry(mirrorSize, mirrorSize), mirrorMaterialB);
 // Base planes share the X axis. Their normals are (Y+Z)/sqrt(2) and (Y-Z)/sqrt(2).
@@ -43,9 +42,10 @@ edge.rotation.z = Math.PI / 2; group.add(edge);
 
 const axis = new THREE.AxesHelper(2.1); axis.material.transparent = true; axis.material.opacity = .7; displayRoot.add(axis);
 const rayGroup = new THREE.Group(); displayRoot.add(rayGroup);
-const rayMats = [new THREE.LineBasicMaterial({ color: 0xa9b8c8 }), new THREE.LineBasicMaterial({ color: 0xffb75e }), new THREE.LineBasicMaterial({ color: 0x67e8c0 })];
-const arrowMats = [new THREE.MeshBasicMaterial({ color: 0xa9b8c8 }), new THREE.MeshBasicMaterial({ color: 0xffb75e }), new THREE.MeshBasicMaterial({ color: 0x67e8c0 })];
+const rayMats = [new THREE.LineBasicMaterial({ color: 0xa9b8c8, depthTest: false, depthWrite: false }), new THREE.LineBasicMaterial({ color: 0xffb75e, depthTest: false, depthWrite: false }), new THREE.LineBasicMaterial({ color: 0x67e8c0, depthTest: false, depthWrite: false })];
+const arrowMats = [new THREE.MeshBasicMaterial({ color: 0xa9b8c8, depthTest: false, depthWrite: false }), new THREE.MeshBasicMaterial({ color: 0xffb75e, depthTest: false, depthWrite: false }), new THREE.MeshBasicMaterial({ color: 0x67e8c0, depthTest: false, depthWrite: false })];
 const rayLines = rayMats.map((mat) => { const line = new THREE.Line(new THREE.BufferGeometry(), mat); rayGroup.add(line); return line; });
+rayGroup.renderOrder = 10;
 const hitMarkers = [0,1].map(() => { const m = new THREE.Mesh(new THREE.SphereGeometry(.11, 16, 8), new THREE.MeshBasicMaterial({color:0xffffff})); rayGroup.add(m); return m; });
 const arrows = arrowMats.map((mat) => { const a = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), .7, mat.color, .16, .1); rayGroup.add(a); return a; });
 
@@ -82,7 +82,7 @@ function update() {
   rayLines.forEach((line, i) => setSegment(line, ...segments[i]));
   hitMarkers.forEach((m, i) => { m.visible = Boolean(hits[i]); if (hits[i]) m.position.copy(hits[i]); });
   arrows.forEach((a, i) => { const seg = segments[i]; const d = seg[1].clone().sub(seg[0]); a.position.copy(seg[0].clone().addScaledVector(d, .58)); a.setDirection(d.normalize()); a.setLength(.72, .16, .1); });
-  mirrorA.material.opacity = .34; mirrorB.material.opacity = .3;
+  mirrorA.material.opacity = .2; mirrorB.material.opacity = .18;
   document.querySelector('#incidentVector').textContent = `(${fmt(baseIncident.x)}, ${fmt(baseIncident.y)}, ${fmt(baseIncident.z)})`;
   document.querySelector('#outgoingVector').textContent = `(${fmt(direction.x)}, ${fmt(direction.y)}, ${fmt(direction.z)})`;
   document.querySelector('#deviationValue').textContent = `${THREE.MathUtils.radToDeg(Math.acos(THREE.MathUtils.clamp(baseIncident.dot(direction), -1, 1))).toFixed(1)}°`;
