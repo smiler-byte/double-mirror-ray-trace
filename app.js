@@ -5,8 +5,8 @@ const sceneHost = document.querySelector('#scene');
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0b121b);
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-camera.position.set(10.5, 0, 5.8);
-camera.up.set(0, 0, 1);
+camera.position.set(0, 0, -18);
+camera.up.set(1, 0, 0);
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -19,12 +19,11 @@ controls.target.set(0, 0, 0);
 
 scene.add(new THREE.HemisphereLight(0xaac3d8, 0x111722, 1.9));
 const keyLight = new THREE.DirectionalLight(0xffffff, 2.2); keyLight.position.set(4, 6, 8); scene.add(keyLight);
-const grid = new THREE.GridHelper(16, 16, 0x263b4e, 0x172635); grid.position.y = -3.25; scene.add(grid);
+const grid = new THREE.GridHelper(16, 16, 0x263b4e, 0x172635); grid.rotation.x = Math.PI / 2; grid.position.z = 3.2; scene.add(grid);
 
 // Camera convention: +Y is screen-right, +X is screen-up, and +Z goes into
 // the screen. Keep the displayed geometry in the same handed coordinate frame.
 const displayRoot = new THREE.Group();
-displayRoot.scale.x = -1;
 scene.add(displayRoot);
 const group = new THREE.Group(); displayRoot.add(group);
 const mirrorSize = 9.5;
@@ -32,14 +31,17 @@ const mirrorMaterialA = new THREE.MeshPhysicalMaterial({ color: 0x6fd8e2, transp
 const mirrorMaterialB = new THREE.MeshPhysicalMaterial({ color: 0x9d86f5, transparent: true, opacity: .18, metalness: .65, roughness: .2, side: THREE.DoubleSide });
 const mirrorA = new THREE.Mesh(new THREE.PlaneGeometry(mirrorSize, mirrorSize), mirrorMaterialA);
 const mirrorB = new THREE.Mesh(new THREE.PlaneGeometry(mirrorSize, mirrorSize), mirrorMaterialB);
-// Base planes share the X axis. Their normals are (Y+Z)/sqrt(2) and (Y-Z)/sqrt(2).
+// The mirrors are 45-degree planes in the XY drawing plane and extend along Z.
 const zNormal = new THREE.Vector3(0, 0, 1);
-const baseNormals = [new THREE.Vector3(0, 1, 1).normalize(), new THREE.Vector3(0, 1, -1).normalize()];
+const baseNormals = [new THREE.Vector3(1, 1, 0).normalize(), new THREE.Vector3(1, -1, 0).normalize()];
 mirrorA.quaternion.setFromUnitVectors(zNormal, baseNormals[0]);
 mirrorB.quaternion.setFromUnitVectors(zNormal, baseNormals[1]);
+const mirrorEdgeA = new THREE.LineSegments(new THREE.EdgesGeometry(mirrorA.geometry), new THREE.LineBasicMaterial({ color: 0x72e5eb, depthTest: false }));
+const mirrorEdgeB = new THREE.LineSegments(new THREE.EdgesGeometry(mirrorB.geometry), new THREE.LineBasicMaterial({ color: 0xb39aff, depthTest: false }));
+mirrorA.add(mirrorEdgeA); mirrorB.add(mirrorEdgeB);
 group.add(mirrorA, mirrorB);
 const edge = new THREE.Mesh(new THREE.CylinderGeometry(.035, .035, 8.8, 12), new THREE.MeshBasicMaterial({ color: 0xe9f2fa }));
-edge.rotation.z = Math.PI / 2; group.add(edge);
+edge.rotation.x = Math.PI / 2; group.add(edge);
 
 const axis = new THREE.AxesHelper(2.1); axis.material.transparent = true; axis.material.opacity = .7; displayRoot.add(axis);
 const rayGroup = new THREE.Group(); displayRoot.add(rayGroup);
@@ -50,16 +52,14 @@ rayGroup.renderOrder = 10;
 const hitMarkers = [0,1].map(() => { const m = new THREE.Mesh(new THREE.SphereGeometry(.11, 16, 8), new THREE.MeshBasicMaterial({color:0xffffff})); rayGroup.add(m); return m; });
 const arrows = arrowMats.map((mat) => { const a = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), .7, mat.color, .16, .1); rayGroup.add(a); return a; });
 
-const planeBasis = [[new THREE.Vector3(1,0,0), new THREE.Vector3(0,1,1).normalize()], [new THREE.Vector3(1,0,0), new THREE.Vector3(0,1,-1).normalize()]];
-const rayStart = new THREE.Vector3(1.2, 3.6, 3);
+const planeBasis = [[new THREE.Vector3(0,0,1), new THREE.Vector3(1,-1,0).normalize()], [new THREE.Vector3(0,0,1), new THREE.Vector3(1,1,0).normalize()]];
+const rayStart = new THREE.Vector3(1.6, 5.8, 0);
 const baseIncident = new THREE.Vector3(0,-1,0);
 const xSlider = document.querySelector('#xSlider'), ySlider = document.querySelector('#ySlider'), zSlider = document.querySelector('#zSlider');
 const fmt = (v) => `${v >= 0 ? '' : '-'}${Math.abs(v).toFixed(3)}`;
-const mountRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, THREE.MathUtils.degToRad(90), 0, 'XYZ'));
 function rotatedData() {
   const userRotation = new THREE.Quaternion().setFromEuler(new THREE.Euler(THREE.MathUtils.degToRad(+xSlider.value), THREE.MathUtils.degToRad(+ySlider.value), THREE.MathUtils.degToRad(+zSlider.value), 'XYZ'));
-  const q = mountRotation.clone().multiply(userRotation);
-  return { q, normals: baseNormals.map((n) => n.clone().applyQuaternion(q)), bases: planeBasis.map((bs) => bs.map((b) => b.clone().applyQuaternion(q))) };
+  return { q: userRotation, normals: baseNormals.map((n) => n.clone().applyQuaternion(userRotation)), bases: planeBasis.map((bs) => bs.map((b) => b.clone().applyQuaternion(userRotation))) };
 }
 function rayPlaneHit(origin, direction, normal) {
   const denom = direction.dot(normal); if (Math.abs(denom) < 1e-6) return null;
