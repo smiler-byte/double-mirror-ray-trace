@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>双平面镜三维光线追迹</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="topbar">
+        <div>
+          <p class="eyebrow">OPTICAL LAB / 3D RAY TRACE</p>
+          <h1>双平面镜 · 三维光线追迹</h1>
+          <p class="subtitle">两块镜面保持 90° 夹角，拖动角度观察出射方向。</p>
+        </div>
+        <div class="status-pill"><span class="status-dot"></span><span id="statusText">双次反射已成立</span></div>
+      </section>
+
+      <section class="workspace">
+        <div class="viewport-panel">
+          <div id="scene" class="scene"></div>
+          <div class="legend">
+            <span><i class="swatch incoming"></i>入射光</span>
+            <span><i class="swatch reflected"></i>反射光</span>
+            <span><i class="swatch outgoing"></i>出射光</span>
+            <span><i class="swatch mirror"></i>镜面</span>
+          </div>
+          <div class="axis-hint">世界坐标 · Z 轴沿镜面交线</div>
+        </div>
+
+        <aside class="control-panel">
+          <div class="panel-heading"><span>参数控制</span><button id="resetBtn" class="ghost-btn" title="恢复默认角度">重置</button></div>
+
+          <div class="control-group">
+            <div class="group-title"><span>镜组姿态</span><span class="value-badge" id="rotationSummary">0° / 0° / 0°</span></div>
+            <label>绕 X 轴 <output id="xValue">0°</output><input id="xSlider" type="range" min="-75" max="75" value="0" step="1" /></label>
+            <label>绕 Y 轴 <output id="yValue">0°</output><input id="ySlider" type="range" min="-75" max="75" value="0" step="1" /></label>
+            <label>绕 Z 轴 <output id="zValue">0°</output><input id="zSlider" type="range" min="-180" max="180" value="0" step="1" /></label>
+          </div>
+
+          <div class="control-group compact">
+            <div class="group-title"><span>光线状态</span><span class="mini-label">单位向量</span></div>
+            <div class="vector-row"><span>入射方向</span><code id="incidentVector">(-0.707, -0.707, 0.000)</code></div>
+            <div class="vector-row"><span>出射方向</span><code id="outgoingVector">(0.707, 0.707, 0.000)</code></div>
+            <div class="vector-row"><span>偏转角</span><strong id="deviationValue">180.0°</strong></div>
+          </div>
+
+          <div class="formula-card">
+            <div class="formula-title">反射计算</div>
+            <div class="formula">d′ = d − 2(d · n)n</div>
+            <p>n 为镜面单位法向量。镜组旋转后，两个法向量仍保持正交。</p>
+          </div>
+        </aside>
+      </section>
+      <footer>拖动场景可改变观察视角 · 滚轮缩放 · 初始入射面与镜面成 45°</footer>
+    </main>
+    <script type="importmap">
+      {"imports":{"three":"https://unpkg.com/three@0.160.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.160.0/examples/jsm/"}}
+    </script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
